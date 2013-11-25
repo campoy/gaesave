@@ -41,7 +41,8 @@ type Elem interface {
 // Save saves a Savable to the datastore taking into account before and
 // after save methods.
 func Save(c appengine.Context, obj Savable) (key *datastore.Key, err error) {
-	if id := obj.ID(); id == 0 {
+	fmt.Println("kind: ", obj.Kind(), " id:", obj.ID())
+	if id := obj.ID(); id != 0 {
 		key = datastore.NewKey(c, obj.Kind(), "", id, nil)
 	} else {
 		key = datastore.NewIncompleteKey(c, obj.Kind(), nil)
@@ -101,7 +102,7 @@ func (s structSaver) SetID(id int64) {
 
 // Kind returns the type name without package name.
 func (s structSaver) Kind() string {
-	typ := reflect.TypeOf(s.v).String()
+	typ := reflect.TypeOf(s.e).String()
 	ps := strings.Split(typ, ".")
 	return ps[len(ps)-1]
 }
