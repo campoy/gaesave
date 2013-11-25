@@ -47,27 +47,27 @@ func Save(c appengine.Context, obj Savable) (key *datastore.Key, err error) {
 		key = datastore.NewIncompleteKey(c, obj.Kind(), nil)
 	}
 
+	var elem interface{} = obj
+	if e, ok := obj.(Elem); ok {
+		elem = e.Elem()
+	}
+
 	// BeforeSave hook.
-	if bs, ok := obj.(BeforeSaver); ok {
+	if bs, ok := elem.(BeforeSaver); ok {
 		if err := bs.BeforeSave(); err != nil {
 			return nil, err
 		}
 	}
 
 	// Actual datastore Put.
-	if e, ok := obj.(Elem); ok {
-		fmt.Printf("put %T\n", e.Elem())
-		key, err = datastore.Put(c, key, e.Elem())
-	} else {
-		key, err = datastore.Put(c, key, obj)
-	}
+	key, err = datastore.Put(c, key, elem)
 	if err != nil {
 		return nil, err
 	}
 	obj.SetID(key.IntID())
 
 	// AfterSave hook.
-	if as, ok := obj.(AfterSaver); ok {
+	if as, ok := elem.(AfterSaver); ok {
 		if err := as.AfterSave(); err != nil {
 			return nil, err
 		}
@@ -108,7 +108,7 @@ func (s structSaver) Kind() string {
 
 func (s structSaver) Elem() interface{} { return s.e }
 
-func NewSavableFromStruct(obj interface{}) (Savable, error) {
+func savableFromStruct(obj interface{}) (Savable, error) {
 	val := reflect.ValueOf(obj)
 	if val.Kind() == reflect.Ptr {
 		val = val.Elem()
@@ -121,7 +121,7 @@ func NewSavableFromStruct(obj interface{}) (Savable, error) {
 
 // SaveStruct saves the given struct to the datastore.
 func SaveStruct(c appengine.Context, obj interface{}) (*datastore.Key, error) {
-	s, err := NewSavableFromStruct(obj)
+	s, err := savableFromStruct(obj)
 	if err != nil {
 		return nil, err
 	}
