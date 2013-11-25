@@ -15,10 +15,12 @@ import (
 )
 
 // Savables can be saved by this package.
-// The 0 ID is ignored.
 type Savable interface {
+	// ID returns the identifier or zero if not set.
 	ID() int64
+	// SetID sets the identifier to the given value.
 	SetID(int64)
+	// Kind returns the kind of datastore object.
 	Kind() string
 }
 
@@ -124,7 +126,9 @@ func savableFromStruct(obj interface{}) (Savable, error) {
 // after save methods.
 //
 // The struct is saved with:
+//
 // - kind: name of the type without package name.
+//
 // - id: value of the field named ID of type int64.
 func SaveStruct(c appengine.Context, obj interface{}) (*datastore.Key, error) {
 	s, err := savableFromStruct(obj)
