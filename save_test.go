@@ -25,13 +25,18 @@ func TestSimpleSave(t *testing.T) {
 	}
 }
 
-type CheckedPerson struct {
+type Hooks struct {
 	Person
-	saved bool
+	bs, as bool
 }
 
-func (p *CheckedPerson) BeforeSave() error {
-	p.saved = true
+func (p *Hooks) BeforeSave() error {
+	p.bs = true
+	return nil
+}
+
+func (p *Hooks) AfterSave() error {
+	p.as = true
 	return nil
 }
 
@@ -42,12 +47,15 @@ func TestBeforeSave(t *testing.T) {
 	}
 	defer c.Close()
 
-	p := &CheckedPerson{Person{Name: "John", Age: 42}, false}
+	p := &Hooks{Person: Person{Name: "John", Age: 42}}
 	_, err = SaveStruct(c, p)
 	if err != nil {
 		t.Error(err)
 	}
-	if p.saved == false {
+	if !p.bs {
 		t.Error("BeforeSave wasn't called")
+	}
+	if !p.as {
+		t.Error("AfterSave wasn't called")
 	}
 }
