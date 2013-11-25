@@ -41,7 +41,6 @@ type Elem interface {
 // Save saves a Savable to the datastore taking into account before and
 // after save methods.
 func Save(c appengine.Context, obj Savable) (key *datastore.Key, err error) {
-	fmt.Println("kind: ", obj.Kind(), " id:", obj.ID())
 	if id := obj.ID(); id != 0 {
 		key = datastore.NewKey(c, obj.Kind(), "", id, nil)
 	} else {
