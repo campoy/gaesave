@@ -120,7 +120,12 @@ func savableFromStruct(obj interface{}) (Savable, error) {
 	return structSaver{obj, val}, nil
 }
 
-// SaveStruct saves the given struct to the datastore.
+// SaveStruct saves a struct to the datastore taking into account before and
+// after save methods.
+//
+// The struct is saved with:
+// - kind: name of the type without package name.
+// - id: value of the field named ID of type int64.
 func SaveStruct(c appengine.Context, obj interface{}) (*datastore.Key, error) {
 	s, err := savableFromStruct(obj)
 	if err != nil {
