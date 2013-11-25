@@ -32,10 +32,15 @@ type AfterSaver interface {
 	AfterSave() error
 }
 
+// If a type implements Elem the interface returned by the method will be
+// put into the datastore instead of the instance itself.
+type Elem interface {
+	Elem() interface{}
+}
+
 // Save saves a Savable to the datastore taking into account before and
 // after save methods.
-func Save(c appengine.Context, obj Savable) (*datastore.Key, error) {
-	var key *datastore.Key
+func Save(c appengine.Context, obj Savable) (key *datastore.Key, err error) {
 	if id := obj.ID(); id == 0 {
 		key = datastore.NewKey(c, obj.Kind(), "", id, nil)
 	} else {
@@ -50,7 +55,12 @@ func Save(c appengine.Context, obj Savable) (*datastore.Key, error) {
 	}
 
 	// Actual datastore Put.
-	key, err := datastore.Put(c, key, obj)
+	if e, ok := obj.(Elem); ok {
+		fmt.Printf("put %T\n", e.Elem())
+		key, err = datastore.Put(c, key, e.Elem())
+	} else {
+		key, err = datastore.Put(c, key, obj)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -68,6 +78,7 @@ func Save(c appengine.Context, obj Savable) (*datastore.Key, error) {
 
 // structSaver implements Savable given a reflect.Value of Kind struct.
 type structSaver struct {
+	e interface{}
 	v reflect.Value
 }
 
@@ -95,8 +106,9 @@ func (s structSaver) Kind() string {
 	return ps[len(ps)-1]
 }
 
-// SaveStruct saves the given struct to the datastore.
-func SaveStruct(c appengine.Context, obj interface{}) (*datastore.Key, error) {
+func (s structSaver) Elem() interface{} { return s.e }
+
+func NewSavableFromStruct(obj interface{}) (Savable, error) {
 	val := reflect.ValueOf(obj)
 	if val.Kind() == reflect.Ptr {
 		val = val.Elem()
@@ -104,5 +116,14 @@ func SaveStruct(c appengine.Context, obj interface{}) (*datastore.Key, error) {
 	if val.Kind() != reflect.Struct {
 		return nil, fmt.Errorf("can't save %T", obj)
 	}
-	return Save(c, structSaver{val})
+	return structSaver{obj, val}, nil
+}
+
+// SaveStruct saves the given struct to the datastore.
+func SaveStruct(c appengine.Context, obj interface{}) (*datastore.Key, error) {
+	s, err := NewSavableFromStruct(obj)
+	if err != nil {
+		return nil, err
+	}
+	return Save(c, s)
 }

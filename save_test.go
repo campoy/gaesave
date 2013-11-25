@@ -7,12 +7,9 @@ import (
 )
 
 type Person struct {
-	Id   int64
 	Name string
 	Age  int64
 }
-
-func (p Person) ID() int64 { return p.ID() }
 
 func TestSimpleSave(t *testing.T) {
 	c, err := aetest.NewContext(nil)
@@ -21,7 +18,8 @@ func TestSimpleSave(t *testing.T) {
 	}
 	defer c.Close()
 
-	_, err = SaveStruct(c, &Person{Name: "John", Age: 42})
+	p := &Person{Name: "John", Age: 42}
+	_, err = SaveStruct(c, p)
 	if err != nil {
 		t.Error(err)
 	}
