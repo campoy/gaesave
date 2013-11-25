@@ -15,6 +15,7 @@ import (
 )
 
 // Savables can be saved by this package.
+// The 0 ID is ignored.
 type Savable interface {
 	ID() int64
 	SetID(int64)
