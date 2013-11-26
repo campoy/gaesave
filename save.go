@@ -29,7 +29,7 @@ type BeforeSaver interface {
 	BeforeSave() error
 }
 
-// BeforeSave is called after putting the Savable in the datastore and
+// AfterSave is called after putting the Savable in the datastore and
 // setting its ID field.
 type AfterSaver interface {
 	AfterSave() error
